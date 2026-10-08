@@ -5,11 +5,21 @@ const api = require('../lib/breweryApi');
 
 const router = express.Router();
 
+// Breweries whose website links verified dead (404/unreachable/junk data).
+// Their Website buttons are omitted everywhere instead of leading nowhere.
+let deadWebsites = new Set();
+try {
+  deadWebsites = new Set(require('../data/dead-websites.json'));
+} catch {
+  deadWebsites = new Set();
+}
+
 function publicBrewery(doc) {
   const o = doc.toObject ? doc.toObject() : doc;
   delete o._id;
   delete o.__v;
   delete o.phone; // keep phone numbers out of bulk payloads
+  if (o.brewery_id && deadWebsites.has(o.brewery_id)) delete o.website;
   return o;
 }
 
