@@ -6,6 +6,13 @@ const KIND_ICON = { brewery: '🍺', breweries: '🍺', restaurants: '🍽️', 
 const KIND_LABEL = { brewery: 'Brewery', breweries: 'Brewery', restaurants: 'Restaurant', museums: 'Museum', parks: 'Park' };
 const KINDS = ['breweries', 'restaurants', 'museums', 'parks'];
 
+// US-friendly distance: feet under a tenth of a mile, otherwise miles.
+function formatMiles(km) {
+  const mi = km * 0.621371;
+  if (mi < 0.1) return `${Math.round(mi * 5280)} ft`;
+  return `${mi.toFixed(1)} mi`;
+}
+
 function loadStops() {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
@@ -135,6 +142,11 @@ export default function Itinerary() {
 
   function addStop(raw, kind) {
     setStops((prev) => [...prev, toStop(raw, kind)]);
+    // Clean slate after each pick: clear both result lists so the page
+    // goes back to its original uncluttered state.
+    setResults(null);
+    setNearby(null);
+    setNearbyWarning('');
   }
 
   function move(i, dir) {
@@ -260,7 +272,7 @@ export default function Itinerary() {
                         </span>
                         {p.distance_km != null && (
                           <span className="dist-badge">
-                            📍 {p.distance_km < 1 ? `${Math.round(p.distance_km * 1000)} m` : `${p.distance_km.toFixed(1)} km`} away
+                            📍 {formatMiles(p.distance_km)} away
                           </span>
                         )}
                         <div className="muted small">

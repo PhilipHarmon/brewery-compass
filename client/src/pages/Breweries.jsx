@@ -113,10 +113,12 @@ export default function Breweries() {
 
   const grouped = useMemo(() => {
     const groups = {};
-    for (const b of filtered) {
+    filtered.forEach((b, i) => {
       const l = letterOf(b.name);
-      (groups[l] = groups[l] || []).push(b);
-    }
+      // Keep the index within `filtered` so row keys stay consistent
+      // between the flat (searching) and grouped renders.
+      (groups[l] = groups[l] || []).push([b, i]);
+    });
     return LETTERS.map((l) => [l, groups[l] || []]).filter(([, list]) => list.length > 0);
   }, [filtered]);
 
@@ -154,13 +156,19 @@ export default function Breweries() {
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  async function toggleExpand(brewery) {
+  // Row keys must be unique even when several locations share one brewery_id
+  // (duplicate keys break React's list reconciliation on filter).
+  function rowKey(b, i) {
+    return `${b.brewery_id || b.name}::${i}`;
+  }
+
+  async function toggleExpand(brewery, rk) {
     const id = brewery.brewery_id;
-    if (expanded === id) {
+    if (expanded === rk) {
       setExpanded(null);
       return;
     }
-    setExpanded(id);
+    setExpanded(rk);
     if (beersCache[id] || !id) return;
     setBeersLoading(true);
     try {
@@ -179,7 +187,8 @@ export default function Breweries() {
     const match = breweries.find((b) => b.brewery_id === focusId);
     if (!match) return;
     focusedOnce.current = true;
-    toggleExpand(match);
+    // Query is empty on a fresh deep link, so filtered preserves brewery order.
+    toggleExpand(match, rowKey(match, breweries.indexOf(match)));
     setTimeout(() => {
       const el = document.querySelector(`[data-brewery-id="${CSS.escape(focusId)}"]`);
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -367,16 +376,19 @@ export default function Breweries() {
       <div ref={resultsRef} className="results-anchor">
       {searching ? (
         <ul className="brewery-list">
-          {filtered.map((b) => (
-            <BreweryRow
-              key={b.brewery_id || b.name}
-              brewery={b}
-              expanded={expanded === b.brewery_id}
-              beers={beersCache[b.brewery_id]}
-              beersLoading={beersLoading && expanded === b.brewery_id}
-              onToggle={() => toggleExpand(b)}
-            />
-          ))}
+          {filtered.map((b, i) => {
+            const rk = rowKey(b, i);
+            return (
+              <BreweryRow
+                key={rk}
+                brewery={b}
+                expanded={expanded === rk}
+                beers={beersCache[b.brewery_id]}
+                beersLoading={beersLoading && expanded === rk}
+                onToggle={() => toggleExpand(b, rk)}
+              />
+            );
+          })}
         </ul>
       ) : (
         grouped.map(([l, list]) => (
@@ -389,16 +401,19 @@ export default function Breweries() {
           >
             <h2 className="letter-heading">{l}</h2>
             <ul className="brewery-list">
-              {list.map((b) => (
-                <BreweryRow
-                  key={b.brewery_id || b.name}
-                  brewery={b}
-                  expanded={expanded === b.brewery_id}
-                  beers={beersCache[b.brewery_id]}
-                  beersLoading={beersLoading && expanded === b.brewery_id}
-                  onToggle={() => toggleExpand(b)}
-                />
-              ))}
+              {list.map(([b, i]) => {
+                const rk = rowKey(b, i);
+                return (
+                  <BreweryRow
+                    key={rk}
+                    brewery={b}
+                    expanded={expanded === rk}
+                    beers={beersCache[b.brewery_id]}
+                    beersLoading={beersLoading && expanded === rk}
+                    onToggle={() => toggleExpand(b, rk)}
+                  />
+                );
+              })}
             </ul>
           </section>
         ))

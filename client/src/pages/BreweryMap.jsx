@@ -16,7 +16,9 @@ const pinIcon = L.divIcon({
 });
 
 function featureId(f, i) {
-  return f.properties.brewery_id || f.properties.name || `f-${i}`;
+  // Include the index: several locations can share one brewery_id, and
+  // duplicate keys break React's reconciliation.
+  return `${f.properties.brewery_id || f.properties.name || 'f'}-${i}`;
 }
 
 function FitView({ features, target }) {
