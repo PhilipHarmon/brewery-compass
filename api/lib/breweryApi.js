@@ -9,7 +9,11 @@
 
 const ODB_BASE = 'https://api.openbrewerydb.org/v1/breweries';
 const OSRM_BASE = 'https://router.project-osrm.org/route/v1/driving';
-const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
+const OVERPASS_URLS = [
+  'https://overpass-api.de/api/interpreter',
+  'https://overpass.kumi.systems/api/interpreter',
+  'https://overpass.private.coffee/api/interpreter',
+];
 const NC_STATE = 'north_carolina';
 
 async function getJson(url, params = {}, timeoutMs = 8000) {
@@ -73,40 +77,137 @@ async function findBrewery(name, state = NC_STATE, limit = 15) {
   return matches;
 }
 
-// --- Nearby places via Overpass (never throws) -----------------------------
+// --- Nearby places: Photon (primary) with Overpass fallback ----------------
+// Photon (Komoot's OpenStreetMap search) is a proper search API — far more
+// reliable than raw Overpass queries. Overpass mirrors remain as fallback.
+
+const PHOTON_URL = 'https://photon.komoot.io/api/';
 
 const PLACE_QUERIES = {
+  restaurants: { q: 'restaurant', osm_tag: 'amenity:restaurant' },
+  museums: { q: 'museum', osm_tag: 'tourism:museum' },
+  parks: { q: 'park', osm_tag: 'leisure:park' },
+};
+
+// Overpass fallback query fragments (kept from the original implementation).
+const OVERPASS_TAGS = {
   restaurants: '[amenity=restaurant]',
   museums: '[tourism=museum]',
   parks: '[leisure=park]',
 };
 
-async function nearbyPlaces(lat, lng, kind, radiusM = 2500, limit = 20) {
-  if (!PLACE_QUERIES[kind]) return { places: [], warning: `Unknown place kind: ${kind}` };
-  const query = `[out:json][timeout:20];node(around:${radiusM},${lat},${lng})${PLACE_QUERIES[kind]};out body ${limit};`;
-  let data;
-  try {
-    data = await getJson(OVERPASS_URL, { data: query }, 20000);
-  } catch {
-    return { places: [], warning: 'Nearby places are temporarily unavailable — try again in a bit.' };
+function haversineKm(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+function photonPlace(f, kind) {
+  const p = f.properties || {};
+  if (!p.name) return null;
+  const coords = (f.geometry || {}).coordinates || [];
+  const lng = coords[0];
+  const lat = coords[1];
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  const addr = [p.housenumber, p.street, p.city].filter(Boolean).join(' ');
+  return {
+    name: p.name,
+    kind,
+    address: addr || null,
+    phone: null,
+    website: null,
+    lat,
+    lng,
+  };
+}
+
+async function nearbyPlacesPhoton(lat, lng, kind, radiusM, limit) {
+  const spec = PLACE_QUERIES[kind];
+  // bbox (~3km each way) forces Photon to return genuinely local results —
+  // without it, its text search ranks global matches above nearby ones.
+  const d = 0.03;
+  const bbox = `${lng - d},${lat - d},${lng + d},${lat + d}`;
+  const data = await getJson(
+    PHOTON_URL,
+    { q: spec.q, osm_tag: spec.osm_tag, lat, lon: lng, bbox, limit: 40 },
+    12000,
+  );
+  const radiusKm = radiusM / 1000;
+  const places = [];
+  for (const f of data.features || []) {
+    const place = photonPlace(f, kind);
+    if (!place) continue;
+    const dKm = haversineKm(lat, lng, place.lat, place.lng);
+    if (dKm > radiusKm) continue;
+    place.distance_km = Math.round(dKm * 10) / 10;
+    places.push(place);
   }
+  places.sort((a, b) => a.distance_km - b.distance_km);
+  return places.slice(0, limit);
+}
+
+async function nearbyPlacesOverpass(lat, lng, kind, radiusM, limit) {
+  const tag = OVERPASS_TAGS[kind];
+  const query = `[out:json][timeout:15];node(around:${radiusM},${lat},${lng})${tag};out body ${limit};`;
+  // Try each Overpass mirror in turn — these community instances go up and
+  // down, so failover beats depending on any single one.
+  let data = null;
+  for (const base of OVERPASS_URLS) {
+    try {
+      data = await getJson(base, { data: query }, 12000);
+      break;
+    } catch {
+      data = null;
+    }
+  }
+  if (!data) return null;
   const places = [];
   for (const el of data.elements || []) {
     const tags = el.tags || {};
     if (!tags.name) continue;
     const addr = [tags['addr:housenumber'], tags['addr:street'], tags['addr:city']].filter(Boolean).join(' ');
+    const plat = el.lat ?? null;
+    const plng = el.lon ?? null;
     places.push({
       name: tags.name,
       kind,
       address: addr || null,
       phone: tags.phone || null,
       website: tags.website || null,
-      lat: el.lat ?? null,
-      lng: el.lon ?? null,
+      lat: plat,
+      lng: plng,
+      distance_km:
+        plat != null && plng != null
+          ? Math.round(haversineKm(lat, lng, plat, plng) * 10) / 10
+          : null,
     });
     if (places.length >= limit) break;
   }
-  return { places, warning: null };
+  return places;
+}
+
+async function nearbyPlaces(lat, lng, kind, radiusM = 2500, limit = 20) {
+  if (!PLACE_QUERIES[kind]) return { places: [], warning: `Unknown place kind: ${kind}` };
+  // Primary: Photon. Fallback: Overpass mirrors.
+  try {
+    const places = await nearbyPlacesPhoton(lat, lng, kind, radiusM, limit);
+    return { places, warning: null };
+  } catch {
+    // fall through to Overpass
+  }
+  try {
+    const places = await nearbyPlacesOverpass(lat, lng, kind, radiusM, limit);
+    if (places) return { places, warning: null };
+  } catch {
+    // fall through to the warning below
+  }
+  return { places: [], warning: 'Nearby places are temporarily unavailable — try again in a bit.' };
 }
 
 // --- Routing via OSRM (never throws) ---------------------------------------
@@ -146,4 +247,5 @@ module.exports = {
   routeBetween,
   formatDuration,
   formatDistance,
+  haversineKm,
 };

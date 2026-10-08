@@ -237,6 +237,11 @@ export default function Itinerary() {
                 </button>
               ))}
             </div>
+            {nearbyKind !== 'breweries' && (
+              <p className="muted small" style={{ marginTop: '0.4rem' }}>
+                Nearby places © OpenStreetMap contributors.
+              </p>
+            )}
             {nearbyWarning && <p className="muted">{nearbyWarning}</p>}
             {nearbyLoading && <p className="muted">Looking nearby…</p>}
             {nearby && nearby.length === 0 && !nearbyLoading && <p className="muted">Nothing found nearby.</p>}

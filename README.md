@@ -20,7 +20,7 @@ times between stops.
    `CLIENT_URL` to the client's origin once it's live). The app uses a fresh
    `brewery_compass` database and seeds itself on first boot — your old
    Flask database is left untouched.
-4. If the API service URL differs from `https://brewery-api.onrender.com`,
+4. If the API service URL differs from `https://brewery-api-tyq3.onrender.com`,
    update `VITE_API_URL` on the static site and redeploy it.
 
 ## Monthly brewery sync

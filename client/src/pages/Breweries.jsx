@@ -78,6 +78,20 @@ export default function Breweries() {
     return `chip${activeFilter === `${kind}:${chip.label}` ? ' active' : ''}`;
   }
 
+  const cities = useMemo(() => {
+    if (!breweries) return [];
+    return [...new Set(breweries.map((b) => b.city).filter(Boolean))].sort((a, b) =>
+      a.localeCompare(b),
+    );
+  }, [breweries]);
+
+  // If the query is exactly a city name, lock results to that city only.
+  const matchedCity = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return null;
+    return cities.find((c) => c.toLowerCase() === q) || null;
+  }, [cities, query]);
+
   const filtered = useMemo(() => {
     if (!breweries) return [];
     // Exact city match: show ONLY that city's breweries.
@@ -107,19 +121,6 @@ export default function Breweries() {
   }, [filtered]);
 
   const searching = query.trim() !== '' || activeFilter !== '';
-
-  const cities = useMemo(() => {
-    if (!breweries) return [];
-    return [...new Set(breweries.map((b) => b.city).filter(Boolean))].sort((a, b) =>
-      a.localeCompare(b),
-    );
-  }, [breweries]);
-
-  const matchedCity = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return null;
-    return cities.find((c) => c.toLowerCase() === q) || null;
-  }, [cities, query]);
 
   function clearSearch() {
     setQuery('');
