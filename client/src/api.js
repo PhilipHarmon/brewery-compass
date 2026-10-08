@@ -20,7 +20,11 @@ export const api = {
     get(`/breweries/by-availability/${encodeURIComponent(value)}`),
   geo: () => get('/geo'),
   liveSearch: (q) => get(`/live/search?q=${encodeURIComponent(q)}`),
-  nearbyBreweries: (lat, lng) => get(`/live/nearby/breweries?lat=${lat}&lng=${lng}`),
+  nearbyBreweries: (lat, lng, exclude) =>
+    get(
+      `/breweries/nearby?lat=${lat}&lng=${lng}` +
+        (exclude ? `&exclude=${encodeURIComponent(exclude)}` : ''),
+    ),
   nearbyPlaces: (lat, lng, kind) => get(`/live/nearby/places?lat=${lat}&lng=${lng}&kind=${kind}`),
   route: (fromLng, fromLat, toLng, toLat) =>
     get(`/live/route?from=${fromLng},${fromLat}&to=${toLng},${toLat}`),

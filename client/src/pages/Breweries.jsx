@@ -80,13 +80,22 @@ export default function Breweries() {
 
   const filtered = useMemo(() => {
     if (!breweries) return [];
+    // Exact city match: show ONLY that city's breweries.
+    if (matchedCity) {
+      const mc = matchedCity.toLowerCase();
+      return breweries.filter(
+        (b) =>
+          (b.city || '').toLowerCase() === mc &&
+          (!filterIds || filterIds.has(b.brewery_id)),
+      );
+    }
     const q = query.trim().toLowerCase();
     return breweries.filter((b) => {
       if (filterIds && !filterIds.has(b.brewery_id)) return false;
       if (q && !`${b.name} ${b.city}`.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [breweries, query, filterIds]);
+  }, [breweries, query, filterIds, matchedCity]);
 
   const grouped = useMemo(() => {
     const groups = {};
@@ -98,6 +107,46 @@ export default function Breweries() {
   }, [filtered]);
 
   const searching = query.trim() !== '' || activeFilter !== '';
+
+  const cities = useMemo(() => {
+    if (!breweries) return [];
+    return [...new Set(breweries.map((b) => b.city).filter(Boolean))].sort((a, b) =>
+      a.localeCompare(b),
+    );
+  }, [breweries]);
+
+  const matchedCity = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return null;
+    return cities.find((c) => c.toLowerCase() === q) || null;
+  }, [cities, query]);
+
+  function clearSearch() {
+    setQuery('');
+    setActiveFilter('');
+    setFilterIds(null);
+  }
+
+  const [suggestOpen, setSuggestOpen] = useState(false);
+
+  const suggestions = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q || !breweries) return [];
+    const out = [];
+    for (const c of cities) {
+      if (c.toLowerCase().includes(q) && c.toLowerCase() !== q) {
+        out.push({ type: 'city', label: `📍 ${c}`, value: c });
+        if (out.length >= 3) break;
+      }
+    }
+    for (const b of breweries) {
+      if (`${b.name} ${b.city}`.toLowerCase().includes(q)) {
+        out.push({ type: 'brewery', label: `${b.name} — ${b.city || ''}`, value: b.name });
+        if (out.length >= 8) break;
+      }
+    }
+    return out;
+  }, [query, breweries, cities]);
 
   function scrollToLetter(l) {
     const el = sectionRefs.current[l];
@@ -154,15 +203,60 @@ export default function Breweries() {
             if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
           }}
         >
-          <input
-            type="search"
-            className="brewery-search"
-            placeholder="Search breweries or cities…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            aria-label="Search breweries"
-          />
+          <div className="search-suggest-wrap">
+            <input
+              type="search"
+              className="brewery-search"
+              placeholder="Search breweries or cities…"
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setSuggestOpen(true);
+              }}
+              onFocus={() => setSuggestOpen(true)}
+              onBlur={() => setTimeout(() => setSuggestOpen(false), 120)}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') setSuggestOpen(false);
+              }}
+              aria-label="Search breweries"
+              autoComplete="off"
+            />
+            {suggestOpen && suggestions.length > 0 && (
+              <ul className="suggest-list" role="listbox" aria-label="Search suggestions">
+                {suggestions.map((s, i) => (
+                  <li key={`${s.type}-${i}`} role="option" aria-selected="false">
+                    <button
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        setQuery(s.value);
+                        setSuggestOpen(false);
+                      }}
+                    >
+                      {s.label}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          {(query || activeFilter) && (
+            <button type="button" className="btn btn-ghost btn-sm" onClick={clearSearch}>
+              ✕ Clear
+            </button>
+          )}
         </form>
+        {matchedCity && (
+          <div className="city-banner" role="status">
+            <span>
+              📍 Showing only breweries in <strong>{matchedCity}</strong> ·{' '}
+              {filtered.length} found
+            </span>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={clearSearch}>
+              ✕ Clear
+            </button>
+          </div>
+        )}
         <div className="filter-groups">
           <div className="filter-group">
             <h3 className="filter-group-title">🍺 Styles</h3>

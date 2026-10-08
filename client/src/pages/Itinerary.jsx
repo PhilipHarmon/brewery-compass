@@ -18,6 +18,7 @@ function toStop(raw, kind) {
   return {
     name: raw.name,
     kind: kind || 'brewery',
+    brewery_id: raw.brewery_id || null,
     address: raw.address || [raw.street, raw.city, raw.state].filter(Boolean).join(', ') || null,
     phone: raw.phone || null,
     website_url: raw.website_url || raw.website || null,
@@ -102,13 +103,14 @@ export default function Itinerary() {
     setNearbyKind(kind);
     if (!stops.length) {
       setNearby(null);
-      setNearbyWarning('Add a starting brewery first — nearby is measured from stop #1.');
+      setNearbyWarning('Add a starting brewery first — nearby is measured from your latest stop.');
       return;
     }
-    const a = stops[0];
+    // Anchor to the latest stop: as the day grows, nearby follows the journey.
+    const a = stops[stops.length - 1];
     if (a.lat == null || a.lng == null) {
       setNearby(null);
-      setNearbyWarning('Your first stop has no map location.');
+      setNearbyWarning('Your latest stop has no map location.');
       return;
     }
     setNearbyLoading(true);
@@ -116,7 +118,7 @@ export default function Itinerary() {
     setNearbyWarning('');
     try {
       if (kind === 'breweries') {
-        const data = await api.nearbyBreweries(a.lat, a.lng);
+        const data = await api.nearbyBreweries(a.lat, a.lng, a.brewery_id);
         setNearby(Array.isArray(data) ? data : []);
       } else {
         const data = await api.nearbyPlaces(a.lat, a.lng, kind);
@@ -167,13 +169,28 @@ export default function Itinerary() {
                 type="search"
                 placeholder="e.g. Trophy Brewing"
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  if (!e.target.value.trim()) setResults(null);
+                }}
                 onKeyDown={(e) => e.key === 'Enter' && doSearch()}
                 aria-label="Search breweries"
               />
               <button type="button" className="btn btn-primary" onClick={doSearch} disabled={searching}>
                 {searching ? '…' : 'Search'}
               </button>
+              {(query || results) && (
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={() => {
+                    setQuery('');
+                    setResults(null);
+                  }}
+                >
+                  ✕ Clear
+                </button>
+              )}
             </div>
             {results && results.length === 0 && <p className="muted">No NC breweries found for that name.</p>}
             {results && results.length > 0 && (
@@ -206,7 +223,7 @@ export default function Itinerary() {
 
           <section className="panel">
             <h2 className="panel-title">2 · Find nearby</h2>
-            <p className="muted small">Shows what's around your first stop.</p>
+            <p className="muted small">Shows what&rsquo;s around your latest stop — add a stop and it follows your day.</p>
             <div className="kind-tabs" role="group" aria-label="Nearby categories">
               {KINDS.map((k) => (
                 <button
@@ -236,6 +253,11 @@ export default function Itinerary() {
                         <span className="kind-badge">
                           {KIND_ICON[nearbyKind]} {KIND_LABEL[nearbyKind]}
                         </span>
+                        {p.distance_km != null && (
+                          <span className="dist-badge">
+                            📍 {p.distance_km < 1 ? `${Math.round(p.distance_km * 1000)} m` : `${p.distance_km.toFixed(1)} km`} away
+                          </span>
+                        )}
                         <div className="muted small">
                           {p.address || [p.street, p.city].filter(Boolean).join(', ')}
                         </div>

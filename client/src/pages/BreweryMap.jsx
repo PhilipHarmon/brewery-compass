@@ -115,6 +115,8 @@ export default function BreweryMap() {
                   <strong>{p.name}</strong>
                   <br />
                   {[p.city, p.brewery_type].filter(Boolean).join(' · ')}
+                  <br />
+                  <em className="tip-hint">👆 Click the pin for more info</em>
                 </Tooltip>
                 <Popup className="brew-pop">
                   <div className="brew-pop-card">

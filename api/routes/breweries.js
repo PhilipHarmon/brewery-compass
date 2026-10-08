@@ -119,6 +119,48 @@ router.get('/breweries/by-availability/:value', async (req, res, next) => {
   }
 });
 
+function haversineKm(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+// GET /api/breweries/nearby?lat=&lng=&radius_km= — closest breweries from the
+// local DB (no third-party API needed), each with distance_km. Optional
+// &exclude=<brewery_id> to leave out the anchor stop itself.
+router.get('/breweries/nearby', async (req, res, next) => {
+  try {
+    const lat = Number(req.query.lat);
+    const lng = Number(req.query.lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      return res.status(400).json({ error: 'lat and lng query params are required.' });
+    }
+    const radiusKm = Number(req.query.radius_km) || 15;
+    const exclude = req.query.exclude || null;
+    const docs = await Brewery.find({
+      latitude: { $ne: null },
+      longitude: { $ne: null },
+    }).lean();
+    const near = docs
+      .map((b) => ({
+        ...publicBrewery(b),
+        distance_km: haversineKm(lat, lng, b.latitude, b.longitude),
+      }))
+      .filter((b) => b.distance_km <= radiusKm && b.brewery_id !== exclude)
+      .sort((a, b) => a.distance_km - b.distance_km)
+      .slice(0, 30);
+    res.json(near);
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /api/geo — breweries as GeoJSON for the map.
 router.get('/geo', async (req, res, next) => {
   try {
