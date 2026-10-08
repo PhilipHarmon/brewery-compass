@@ -24,4 +24,4 @@ services:
     envVars:
       # Update this if your API service ends up with a different name/URL.
       - key: VITE_API_URL
-        value: https://brewery-api.onrender.com/api
+        value: https://brewery-api-tyq3.onrender.com/api

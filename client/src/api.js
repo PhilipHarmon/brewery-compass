@@ -8,9 +8,16 @@ async function get(path) {
 
 export const api = {
   breweries: () => get('/breweries'),
+  searchBreweries: (name) => get(`/breweries?name=${encodeURIComponent(name)}`),
   beersFor: (breweryId) => get(`/breweries/${encodeURIComponent(breweryId)}/beers`),
   beerStyles: () => get('/beer-styles'),
   breweriesByStyle: (style) => get(`/breweries/by-style/${encodeURIComponent(style)}`),
+  breweriesByAbv: (min, max) =>
+    get(`/breweries/by-abv?min=${min ?? ''}&max=${max ?? ''}`),
+  breweriesByIbu: (min, max) =>
+    get(`/breweries/by-ibu?min=${min ?? ''}&max=${max ?? ''}`),
+  breweriesByAvailability: (value) =>
+    get(`/breweries/by-availability/${encodeURIComponent(value)}`),
   geo: () => get('/geo'),
   liveSearch: (q) => get(`/live/search?q=${encodeURIComponent(q)}`),
   nearbyBreweries: (lat, lng) => get(`/live/nearby/breweries?lat=${lat}&lng=${lng}`),

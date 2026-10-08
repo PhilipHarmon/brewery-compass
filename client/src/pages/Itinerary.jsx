@@ -82,8 +82,15 @@ export default function Itinerary() {
     setSearching(true);
     setResults(null);
     try {
-      const data = await api.liveSearch(q);
-      setResults(Array.isArray(data) ? data : []);
+      // Local DB first — fast, reliable, and has map coordinates.
+      const local = await api.searchBreweries(q);
+      if (Array.isArray(local) && local.length > 0) {
+        setResults(local);
+        return;
+      }
+      // Fall back to the live Open Brewery DB lookup.
+      const live = await api.liveSearch(q);
+      setResults(Array.isArray(live) ? live : []);
     } catch {
       setResults([]);
     } finally {

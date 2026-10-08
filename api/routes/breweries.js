@@ -19,6 +19,7 @@ router.get('/breweries', async (req, res, next) => {
   try {
     const q = {};
     if (req.query.letter) q.name = new RegExp(`^${escapeRegExp(req.query.letter)}`, 'i');
+    if (req.query.name) q.name = new RegExp(escapeRegExp(req.query.name), 'i');
     if (req.query.city) q.city = new RegExp(escapeRegExp(req.query.city), 'i');
     if (req.query.type) q.brewery_type = req.query.type;
     if (req.query.in_business) q.in_business = req.query.in_business;
@@ -64,6 +65,44 @@ router.get('/beer-styles', async (req, res, next) => {
 router.get('/breweries/by-style/:style', async (req, res, next) => {
   try {
     const ids = await Beer.distinct('brewery_id', { master_style: req.params.style });
+    res.json(ids);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/breweries/by-abv?min=&max= — brewery_ids with a beer in the ABV range.
+router.get('/breweries/by-abv', async (req, res, next) => {
+  try {
+    const range = {};
+    if (req.query.min != null && req.query.min !== '') range.$gte = Number(req.query.min);
+    if (req.query.max != null && req.query.max !== '') range.$lt = Number(req.query.max);
+    const q = Object.keys(range).length ? { abv: range } : { abv: { $exists: true } };
+    const ids = await Beer.distinct('brewery_id', q);
+    res.json(ids);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/breweries/by-ibu?min=&max= — brewery_ids with a beer in the IBU range.
+router.get('/breweries/by-ibu', async (req, res, next) => {
+  try {
+    const range = {};
+    if (req.query.min != null && req.query.min !== '') range.$gte = Number(req.query.min);
+    if (req.query.max != null && req.query.max !== '') range.$lt = Number(req.query.max);
+    const q = Object.keys(range).length ? { ibu: range } : { ibu: { $exists: true } };
+    const ids = await Beer.distinct('brewery_id', q);
+    res.json(ids);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/breweries/by-availability/:value — brewery_ids with a beer of that availability.
+router.get('/breweries/by-availability/:value', async (req, res, next) => {
+  try {
+    const ids = await Beer.distinct('brewery_id', { availability: req.params.value });
     res.json(ids);
   } catch (err) {
     next(err);

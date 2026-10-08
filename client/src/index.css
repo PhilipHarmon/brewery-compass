@@ -55,12 +55,19 @@ a { color: var(--accent-deep); }
 .site-title {
   color: #fff8ee;
   font-weight: 800;
-  font-size: 1.25rem;
+  font-size: 1.75rem;
   text-decoration: none;
   letter-spacing: 0.01em;
   margin-right: auto;
+  transition: text-shadow 0.15s ease, transform 0.15s ease;
 }
 .site-title:hover { color: #fff; text-decoration: none; }
+@media (hover: hover) {
+  .site-title:hover {
+    text-shadow: 0 0 18px rgba(255, 200, 140, 0.65);
+    transform: translateY(-1px);
+  }
+}
 .nav-toggle {
   display: none;
   background: transparent;
@@ -78,9 +85,16 @@ a { color: var(--accent-deep); }
   font-weight: 600;
   padding: 0.5rem 0.85rem;
   border-radius: 8px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
 .site-nav a:hover { background: rgba(255, 255, 255, 0.14); color: #fff; }
 .site-nav a.active { background: rgba(255, 255, 255, 0.2); color: #fff; }
+@media (hover: hover) {
+  .site-nav a:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(255, 170, 110, 0.45);
+  }
+}
 
 /* ---------- footer ---------- */
 
@@ -207,20 +221,54 @@ input:focus, textarea:focus, select:focus {
 
 .brewery-controls { margin: 1.25rem 0; display: flex; flex-direction: column; gap: 0.9rem; }
 .brewery-search { max-width: 480px; }
+.brewery-search-form { max-width: 480px; }
+.brewery-search-form .brewery-search { max-width: none; }
+.results-anchor { scroll-margin-top: 140px; }
+
+/* grouped query buttons */
+.filter-groups { display: flex; flex-direction: column; gap: 1.1rem; }
+.filter-group {
+  background: var(--surface);
+  border: 2px solid #e0cba9;
+  border-radius: var(--radius);
+  padding: 0.85rem 1rem 1rem;
+  box-shadow: var(--shadow);
+}
+.filter-group-title {
+  margin: 0 0 0.6rem;
+  font-size: 0.92rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--accent-deep);
+}
 .style-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .chip {
   font: inherit;
   font-size: 0.85rem;
-  font-weight: 600;
-  padding: 0.4rem 0.9rem;
+  font-weight: 700;
+  padding: 0.42rem 0.95rem;
   border-radius: 999px;
-  border: 1px solid var(--line);
-  background: var(--surface);
-  color: var(--muted);
+  border: 2px solid #d9c3a8;
+  background: #fffdf8;
+  color: var(--accent-deep);
   cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
 }
-.chip:hover { border-color: var(--accent); color: var(--accent-deep); }
-.chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+@media (hover: hover) {
+  .chip:hover {
+    border-color: var(--accent);
+    color: var(--accent-deep);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(200, 110, 50, 0.3);
+  }
+}
+.chip.active {
+  background: var(--accent);
+  border-color: var(--accent-deep);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(160, 80, 30, 0.35);
+}
 
 .letter-bar {
   position: sticky;
@@ -259,10 +307,10 @@ input:focus, textarea:focus, select:focus {
 }
 
 .letter-heading {
-  font-size: 1.6rem;
+  font-size: 1.7rem;
   color: var(--accent-deep);
-  border-bottom: 2px solid var(--accent);
-  padding-bottom: 0.25rem;
+  border-bottom: 3px solid var(--accent);
+  padding-bottom: 0.3rem;
   margin: 2rem 0 1rem;
   scroll-margin-top: 130px;
 }
@@ -271,13 +319,16 @@ input:focus, textarea:focus, select:focus {
 .brewery-list { list-style: none; margin: 0 0 1rem; padding: 0; display: flex; flex-direction: column; gap: 0.6rem; }
 .brewery-card {
   background: var(--surface);
-  border: 1px solid var(--line);
+  border: 2px solid #e0cba9;
   border-radius: var(--radius);
   overflow: hidden;
   transition: box-shadow 0.15s ease, transform 0.15s ease;
 }
 @media (hover: hover) {
-  .brewery-card:hover { box-shadow: 0 6px 20px rgba(200, 110, 50, 0.28); transform: translateY(-2px); }
+  .brewery-card:hover {
+    box-shadow: 0 10px 28px rgba(200, 110, 50, 0.35);
+    transform: translateY(-3px);
+  }
 }
 .brewery-head {
   width: 100%;
@@ -295,7 +346,7 @@ input:focus, textarea:focus, select:focus {
 .brewery-name { font-weight: 700; font-size: 1.05rem; }
 .brewery-meta { color: var(--muted); font-size: 0.88rem; flex: 1; }
 .brewery-caret { color: var(--accent); font-weight: 700; }
-.brewery-detail { border-top: 1px dashed var(--line); padding: 0.9rem 1rem 1rem; }
+.brewery-detail { border-top: 2px dashed #d9c3a8; padding: 0.9rem 1rem 1rem; }
 .brewery-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
 
 .beer-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
@@ -304,8 +355,8 @@ input:focus, textarea:focus, select:focus {
   justify-content: space-between;
   align-items: baseline;
   gap: 1rem;
-  padding: 0.55rem 0;
-  border-bottom: 1px solid var(--line);
+  padding: 0.6rem 0;
+  border-bottom: 2px solid #e8d6ba;
 }
 .beer-row:last-child { border-bottom: none; }
 .beer-main { display: flex; flex-direction: column; }
@@ -322,13 +373,13 @@ input:focus, textarea:focus, select:focus {
 
 /* ---------- map ---------- */
 
-.map-wrap { max-width: 1200px; margin: 0 auto; padding: 0 1rem; }
+.map-wrap { max-width: 1280px; margin: 0 auto; padding: 0 1rem; }
 .brew-map {
-  height: 68vh;
-  min-height: 420px;
+  height: 80vh;
+  min-height: 500px;
   border-radius: var(--radius);
-  border: 1px solid var(--line);
-  box-shadow: var(--shadow);
+  border: 2px solid #e0cba9;
+  box-shadow: var(--shadow-lift);
   z-index: 1;
 }
 .map-count { margin-top: 0.75rem; }
@@ -384,11 +435,18 @@ input:focus, textarea:focus, select:focus {
 
 .panel {
   background: var(--surface);
-  border: 1px solid var(--line);
+  border: 2px solid #e0cba9;
   border-radius: var(--radius);
-  padding: 1.1rem 1.2rem;
+  padding: 1.35rem 1.4rem;
   margin-bottom: 1.25rem;
   box-shadow: var(--shadow);
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+@media (hover: hover) {
+  .panel:hover {
+    box-shadow: var(--shadow-lift);
+    transform: translateY(-2px);
+  }
 }
 .panel-title { font-size: 1.05rem; color: var(--accent-deep); margin: 0 0 0.75rem; }
 .panel-head-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
@@ -403,9 +461,16 @@ input:focus, textarea:focus, select:focus {
   align-items: center;
   gap: 0.75rem;
   background: #fff;
-  border: 1px solid var(--line);
+  border: 2px solid #e0cba9;
   border-radius: 10px;
-  padding: 0.6rem 0.8rem;
+  padding: 0.75rem 0.95rem;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+@media (hover: hover) {
+  .result-row:hover {
+    box-shadow: 0 8px 22px rgba(200, 110, 50, 0.3);
+    transform: translateY(-2px);
+  }
 }
 .kind-badge {
   display: inline-block;
@@ -449,10 +514,17 @@ input:focus, textarea:focus, select:focus {
 }
 .stop-card {
   background: #fff;
-  border: 1px solid var(--line);
+  border: 2px solid #e0cba9;
   border-radius: 10px;
-  padding: 0.75rem 0.9rem;
+  padding: 1rem 1.1rem;
   margin-bottom: 0.15rem;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+@media (hover: hover) {
+  .stop-card:hover {
+    box-shadow: 0 8px 22px rgba(200, 110, 50, 0.3);
+    transform: translateY(-2px);
+  }
 }
 .stop-head { display: flex; gap: 0.6rem; align-items: flex-start; }
 .timeline-num {
@@ -474,6 +546,7 @@ input:focus, textarea:focus, select:focus {
 
 @media (max-width: 720px) {
   .nav-toggle { display: block; }
+  .site-title { font-size: 1.4rem; }
   .site-nav {
     display: none;
     position: absolute;
@@ -492,4 +565,8 @@ input:focus, textarea:focus, select:focus {
   .hero { padding: 2.75rem 1rem 2.5rem; }
   .letter-bar { top: 55px; }
   .beer-stats { flex-wrap: wrap; white-space: normal; justify-content: flex-end; }
+  /* bigger map stays phone-friendly: slightly shorter, tighter padding */
+  .brew-map { height: 70vh; min-height: 360px; }
+  .map-wrap { padding: 0 0.5rem; }
+  .filter-group { padding: 0.7rem 0.8rem 0.85rem; }
 }

@@ -1,20 +1,13 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import {
-  MapContainer,
-  TileLayer,
-  Marker,
-  Tooltip,
-  Popup,
-  useMap,
-} from "react-leaflet";
-import { Link, useSearchParams } from "react-router-dom";
-import L from "leaflet";
-import { api, websiteUrl } from "../api.js";
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { MapContainer, TileLayer, Marker, Tooltip, Popup, useMap } from 'react-leaflet';
+import { Link, useSearchParams } from 'react-router-dom';
+import L from 'leaflet';
+import { api, websiteUrl } from '../api.js';
 
 const NC_CENTER = [35.5, -79.5];
 
 const pinIcon = L.divIcon({
-  className: "brew-pin-wrap",
+  className: 'brew-pin-wrap',
   html: '<span class="brew-pin" aria-hidden="true">🍺</span>',
   iconSize: [36, 36],
   iconAnchor: [18, 32],
@@ -34,10 +27,7 @@ function FitView({ features, target }) {
       map.setView([lat, lng], 13, { animate: true });
     } else if (features.length > 0) {
       const bounds = L.latLngBounds(
-        features.map((f) => [
-          f.geometry.coordinates[1],
-          f.geometry.coordinates[0],
-        ]),
+        features.map((f) => [f.geometry.coordinates[1], f.geometry.coordinates[0]]),
       );
       map.fitBounds(bounds.pad(0.12));
     }
@@ -47,9 +37,9 @@ function FitView({ features, target }) {
 
 export default function BreweryMap() {
   const [params] = useSearchParams();
-  const targetBreweryId = params.get("brewery");
+  const targetBreweryId = params.get('brewery');
   const [features, setFeatures] = useState(null);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const markerRefs = useRef({});
 
   useEffect(() => {
@@ -60,8 +50,7 @@ export default function BreweryMap() {
         if (!cancelled) setFeatures(fc.features || []);
       })
       .catch(() => {
-        if (!cancelled)
-          setError("Could not load the map data. Try again in a bit.");
+        if (!cancelled) setError('Could not load the map data. Try again in a bit.');
       });
     return () => {
       cancelled = true;
@@ -86,8 +75,8 @@ export default function BreweryMap() {
       <div className="narrow">
         <h1>Breweries on the map</h1>
         <p className="muted">
-          Hover a pin for the quick facts — tap or click one for the full card.
-          Clicking a pin's website opens the brewery's own site.
+          Hover a pin for the quick facts — tap or click one for the full card. Clicking a
+          pin's website opens the brewery's own site.
         </p>
       </div>
       {error && (
@@ -107,7 +96,6 @@ export default function BreweryMap() {
             url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           />
-
           <FitView features={features || []} target={target} />
           {(features || []).map((f, i) => {
             const id = featureId(f, i);
@@ -123,34 +111,28 @@ export default function BreweryMap() {
                   if (m) markerRefs.current[id] = m;
                 }}
               >
-                <Tooltip
-                  direction="top"
-                  offset={[0, -30]}
-                  opacity={1}
-                  sticky
-                  className="brew-tip"
-                >
+                <Tooltip direction="top" offset={[0, -30]} opacity={1} sticky className="brew-tip">
                   <strong>{p.name}</strong>
                   <br />
-                  {[p.city, p.brewery_type].filter(Boolean).join(" · ")}
+                  {[p.city, p.brewery_type].filter(Boolean).join(' · ')}
                 </Tooltip>
                 <Popup className="brew-pop">
                   <div className="brew-pop-card">
                     <strong className="brew-pop-name">{p.name}</strong>
                     <div className="muted">
-                      {[p.city, p.brewery_type].filter(Boolean).join(" · ")}
+                      {[p.city, p.brewery_type].filter(Boolean).join(' · ')}
                     </div>
                     <div className="brew-pop-actions">
                       {site && (
-                        <a
-                          href={site}
-                          target="_blank"
-                          rel="noreferrer noopener"
-                        >
+                        <a href={site} target="_blank" rel="noreferrer noopener">
                           🌐 Website
                         </a>
                       )}
-                      {p.brewery_id && <Link to="/breweries">🍻 Tap list</Link>}
+                      {p.brewery_id && (
+                        <Link to={`/breweries?brewery=${encodeURIComponent(p.brewery_id)}`}>
+                          🍻 Tap list
+                        </Link>
+                      )}
                     </div>
                   </div>
                 </Popup>
@@ -161,7 +143,7 @@ export default function BreweryMap() {
       </div>
       <div className="narrow">
         <p className="muted map-count">
-          {features ? `${features.length} breweries pinned` : "Loading pins…"}
+          {features ? `${features.length} breweries pinned` : 'Loading pins…'}
         </p>
       </div>
     </div>
