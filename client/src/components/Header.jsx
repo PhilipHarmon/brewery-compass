@@ -25,6 +25,8 @@ export default function Header() {
           <NavLink to="/breweries">Breweries</NavLink>
           <NavLink to="/map">Map</NavLink>
           <NavLink to="/itinerary">Plan a Day</NavLink>
+          <NavLink to="/about">About</NavLink>
+          <NavLink to="/get-involved">Get Involved</NavLink>
         </nav>
       </div>
     </header>

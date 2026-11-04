@@ -41,13 +41,24 @@ router.get('/breweries', async (req, res, next) => {
 });
 
 // GET /api/breweries/:id/beers — beers for one brewery (by brewery_id).
+// The source data contains exact-duplicate rows for many beers (same
+// beer_id twice or more), so dedupe by beer_id: each real beer appears once.
 router.get('/breweries/:id/beers', async (req, res, next) => {
   try {
     const beers = await Beer.find({ brewery_id: req.params.id })
       .sort({ name: 1 })
       .lean();
+    const seen = new Set();
+    const unique = [];
+    for (const b of beers) {
+      const key = b.beer_id || b.name;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      unique.push(b);
+    }
     res.json(
-      beers.map((b) => ({
+      unique.map((b) => ({
+        beer_id: b.beer_id,
         name: b.name,
         style: b.style,
         master_style: b.master_style,
@@ -56,6 +67,25 @@ router.get('/breweries/:id/beers', async (req, res, next) => {
         ibu: b.ibu,
       })),
     );
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/breweries/detail/:id — one brewery, full public detail for the
+// detail window. Unlike the bulk list, this single-brewery payload includes
+// the phone number (the itinerary already shows phone numbers the same way).
+// Only fields the dataset actually has are returned — no hours/description/
+// photo exist in the data, so none are invented here.
+router.get('/breweries/detail/:id', async (req, res, next) => {
+  try {
+    const doc = await Brewery.findOne({ brewery_id: req.params.id }).lean();
+    if (!doc) return res.status(404).json({ error: 'Brewery not found.' });
+    const o = { ...doc };
+    delete o._id;
+    delete o.__v;
+    if (o.brewery_id && deadWebsites.has(o.brewery_id)) delete o.website;
+    res.json(o);
   } catch (err) {
     next(err);
   }

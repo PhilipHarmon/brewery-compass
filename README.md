@@ -43,3 +43,28 @@ MONGO_URI="mongodb+srv://..." node server.js   # :5000
 
 cd client && npm install && npm run dev          # :5173
 ```
+
+## v9 additions
+
+- **About** (`/about`) — a short history of North Carolina beer, from the
+  Moravian brewers to Beer City USA and today.
+- **Get Involved** (`/get-involved`) — associations, homebrew clubs, and
+  publications for going deeper.
+- **Festivals** — a "North Carolina beer festivals" section at the bottom of
+  the homepage, driven by `client/src/data/festivals.js`.
+- **Brewery detail window** — "Details & ratings" on the Breweries page and
+  the map opens a rich view: contact info, the full tap list, and ratings.
+- **Guest star ratings** — visitors rate breweries and individual beers 1–5
+  stars (no accounts, no text). One rating per item per browser; re-rating
+  updates it. Managed from `/admin` using the `ADMIN_KEY` env var.
+- **Contact form** — in the footer of every page; messages are stored in the
+  database and read from `/admin`. If `SMTP_*` env vars are set, a
+  notification email is also sent (optional, off by default).
+- **Events Nearby** — the Plan a Day page shows Ticketmaster/SeatGeek events
+  near the day's last stop on the chosen date. Set `TICKETMASTER_API_KEY`
+  and/or `SEATGEEK_CLIENT_ID` on the API service to switch it on; with no
+  keys set, the section quietly stays hidden.
+
+New API env vars (API service): `TICKETMASTER_API_KEY`, `SEATGEEK_CLIENT_ID`,
+`ADMIN_KEY`, and optional `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`,
+`CONTACT_NOTIFY_TO`. See the v9 build sheet for where to get each one.

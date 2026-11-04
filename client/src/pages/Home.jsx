@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api.js';
+import { FESTIVALS } from '../data/festivals.js';
 
 export default function Home() {
   const [counts, setCounts] = useState({ breweries: null, cities: null });
@@ -78,6 +79,40 @@ export default function Home() {
           </p>
           <span className="feature-link">Plan your day →</span>
         </Link>
+      </section>
+
+      <section className="narrow festivals-section">
+        <h2 className="festivals-title">🎪 North Carolina beer festivals</h2>
+        <p className="muted">
+          The recurring big days on the NC beer calendar. Dates shift a little every
+          year — each listing shows its typical month, and the festival's own site has
+          this year's details.
+        </p>
+        <div className="festivals-grid">
+          {[...FESTIVALS]
+            .sort((a, b) => a.month - b.month)
+            .map((f) => (
+              <article key={f.name} className="festival-card">
+                <span className="festival-month">{f.monthLabel}</span>
+                <h3>{f.name}</h3>
+                <p className="festival-city">📍 {f.city}</p>
+                <p>{f.blurb}</p>
+                <a
+                  className="feature-link"
+                  href={f.url}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                >
+                  Festival site →
+                </a>
+              </article>
+            ))}
+        </div>
+        <p className="muted small">
+          Planning a trip around one? <Link to="/itinerary">Plan a brewery day</Link>{' '}
+          nearby, and the Plan a Day page will flag concerts, ballgames, and other events
+          happening the same day.
+        </p>
       </section>
     </div>
   );

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { api, websiteUrl } from '../api.js';
+import EventsPanel from '../components/EventsPanel.jsx';
 
 const STORAGE_KEY = 'brewDay';
 const KIND_ICON = { brewery: '🍺', breweries: '🍺', restaurants: '🍽️', museums: '🏛️', parks: '🌳' };
@@ -315,6 +316,8 @@ export default function Itinerary() {
               ))}
             </ol>
           </section>
+
+          <EventsPanel stops={stops} />
         </div>
       </div>
     </div>

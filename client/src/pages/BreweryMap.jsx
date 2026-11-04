@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Tooltip, Popup, useMap } from 'react-l
 import { Link, useSearchParams } from 'react-router-dom';
 import L from 'leaflet';
 import { api, websiteUrl } from '../api.js';
+import BreweryModal from '../components/BreweryModal.jsx';
 
 const NC_CENTER = [35.5, -79.5];
 
@@ -42,6 +43,7 @@ export default function BreweryMap() {
   const targetBreweryId = params.get('brewery');
   const [features, setFeatures] = useState(null);
   const [error, setError] = useState('');
+  const [selected, setSelected] = useState(null);
   const markerRefs = useRef({});
 
   useEffect(() => {
@@ -137,6 +139,15 @@ export default function BreweryMap() {
                           🍻 Tap list
                         </Link>
                       )}
+                      {p.brewery_id && (
+                        <button
+                          type="button"
+                          className="brew-pop-details"
+                          onClick={() => setSelected({ ...p, latitude: lat, longitude: lng })}
+                        >
+                          ⭐ Details & ratings
+                        </button>
+                      )}
                     </div>
                   </div>
                 </Popup>
@@ -150,6 +161,7 @@ export default function BreweryMap() {
           {features ? `${features.length} breweries pinned` : 'Loading pins…'}
         </p>
       </div>
+      {selected && <BreweryModal brewery={selected} onClose={() => setSelected(null)} />}
     </div>
   );
 }

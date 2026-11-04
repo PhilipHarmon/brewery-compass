@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { api, websiteUrl } from '../api.js';
+import BreweryModal from '../components/BreweryModal.jsx';
+import { StarsDisplay } from '../components/RatingWidget.jsx';
 
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
@@ -34,6 +36,8 @@ export default function Breweries() {
   const [beersCache, setBeersCache] = useState({});
   const [beersLoading, setBeersLoading] = useState(false);
   const [error, setError] = useState('');
+  const [modalBrewery, setModalBrewery] = useState(null);
+  const [summaries, setSummaries] = useState({});
   const sectionRefs = useRef({});
   const resultsRef = useRef(null);
   const [params] = useSearchParams();
@@ -47,6 +51,15 @@ export default function Breweries() {
         if (cancelled) return;
         setBreweries(list);
         setStyles(styleList);
+        // Guest star-rating averages for the whole list, in bulk. A failure
+        // here must never break the guide — ratings just don't show.
+        const ids = [...new Set(list.map((b) => b.brewery_id).filter(Boolean))];
+        if (ids.length) {
+          api
+            .ratingSummaries('brewery', ids.slice(0, 300))
+            .then((sums) => !cancelled && setSummaries(sums))
+            .catch(() => {});
+        }
       })
       .catch(() => !cancelled && setError('Could not load the brewery list. Try again in a bit.'));
     return () => {
@@ -386,6 +399,8 @@ export default function Breweries() {
                 beers={beersCache[b.brewery_id]}
                 beersLoading={beersLoading && expanded === rk}
                 onToggle={() => toggleExpand(b, rk)}
+                summary={summaries[b.brewery_id]}
+                onDetails={() => setModalBrewery(b)}
               />
             );
           })}
@@ -411,6 +426,8 @@ export default function Breweries() {
                     beers={beersCache[b.brewery_id]}
                     beersLoading={beersLoading && expanded === rk}
                     onToggle={() => toggleExpand(b, rk)}
+                    summary={summaries[b.brewery_id]}
+                    onDetails={() => setModalBrewery(b)}
                   />
                 );
               })}
@@ -419,11 +436,14 @@ export default function Breweries() {
         ))
       )}
       </div>
+      {modalBrewery && (
+        <BreweryModal brewery={modalBrewery} onClose={() => setModalBrewery(null)} />
+      )}
     </div>
   );
 }
 
-function BreweryRow({ brewery: b, expanded, beers, beersLoading, onToggle }) {
+function BreweryRow({ brewery: b, expanded, beers, beersLoading, onToggle, summary, onDetails }) {
   const site = websiteUrl(b.website);
   return (
     <li
@@ -434,6 +454,12 @@ function BreweryRow({ brewery: b, expanded, beers, beersLoading, onToggle }) {
         <span className="brewery-name">{b.name}</span>
         <span className="brewery-meta">
           {[b.city, b.brewery_type].filter(Boolean).join(' · ')}
+          {summary && summary.count > 0 && (
+            <>
+              {' · '}
+              <StarsDisplay average={summary.average} count={summary.count} className="stars-inline" />
+            </>
+          )}
         </span>
         <span className="brewery-caret" aria-hidden="true">
           {expanded ? '▾' : '▸'}
@@ -452,7 +478,18 @@ function BreweryRow({ brewery: b, expanded, beers, beersLoading, onToggle }) {
                 🗺️ Show on map
               </a>
             )}
+            {b.brewery_id && (
+              <button type="button" className="btn btn-primary btn-sm" onClick={onDetails}>
+                ⭐ Details & ratings
+              </button>
+            )}
           </div>
+          <p className="row-rating-line">
+            <StarsDisplay
+              average={summary ? summary.average : null}
+              count={summary ? summary.count : 0}
+            />
+          </p>
           {beersLoading && <p className="muted">Loading the tap list…</p>}
           {beers && beers.length === 0 && !beersLoading && (
             <p className="muted">No tap list on file for this brewery yet.</p>

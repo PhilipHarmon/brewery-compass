@@ -13,6 +13,16 @@ services:
         value: brewery_compass
       - key: CLIENT_URL
         sync: false
+      # v9 additions — set these in the dashboard (see the v9 build sheet).
+      # TICKETMASTER_API_KEY / SEATGEEK_CLIENT_ID power Happening Nearby;
+      # ADMIN_KEY unlocks the /admin area. All three are optional to deploy:
+      # without them those features stay quietly off.
+      - key: TICKETMASTER_API_KEY
+        sync: false
+      - key: SEATGEEK_CLIENT_ID
+        sync: false
+      - key: ADMIN_KEY
+        sync: false
 
   # Static front-end (Vite + React).
   - type: web

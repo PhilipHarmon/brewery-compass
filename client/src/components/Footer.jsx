@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import ContactForm from './ContactForm.jsx';
 
 export default function Footer() {
   const year = new Date().getFullYear();
@@ -8,7 +9,7 @@ export default function Footer() {
       <div className="footer-inner">
         <div className="footer-col">
           <h3>🍺 Brewery Compass</h3>
-          <p className="muted">
+          <p className="muted-on-dark">
             North Carolina craft breweries — what they pour, where they are, and how to
             spend a day among them.
           </p>
@@ -20,14 +21,22 @@ export default function Footer() {
             <Link to="/breweries">Breweries</Link>
             <Link to="/map">Map</Link>
             <Link to="/itinerary">Plan a Day</Link>
+            <Link to="/about">About</Link>
+            <Link to="/get-involved">Get Involved</Link>
           </nav>
         </div>
         <div className="footer-col">
           <h4>Data</h4>
-          <p className="muted">
+          <p className="muted-on-dark">
             Brewery listings via Open Brewery DB. Nearby places via OpenStreetMap.
-            Drive times via OSRM.
+            Drive times via OSRM. Events via Ticketmaster & SeatGeek.
           </p>
+          <p>
+            <Link to="/admin" className="footer-admin-link">Admin</Link>
+          </p>
+        </div>
+        <div className="footer-col">
+          <ContactForm />
         </div>
       </div>
       <p className="footer-copy">© {year} Philip Harmon. Drink responsibly.</p>

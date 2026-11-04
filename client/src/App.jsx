@@ -7,6 +7,9 @@ import Home from './pages/Home.jsx';
 import Breweries from './pages/Breweries.jsx';
 import BreweryMap from './pages/BreweryMap.jsx';
 import Itinerary from './pages/Itinerary.jsx';
+import About from './pages/About.jsx';
+import GetInvolved from './pages/GetInvolved.jsx';
+import Admin from './pages/Admin.jsx';
 
 export default function App() {
   return (
@@ -18,6 +21,9 @@ export default function App() {
           <Route path="/breweries" element={<Breweries />} />
           <Route path="/map" element={<BreweryMap />} />
           <Route path="/itinerary" element={<Itinerary />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/get-involved" element={<GetInvolved />} />
+          <Route path="/admin" element={<Admin />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
