@@ -96,8 +96,8 @@ const FUN_FACTS = [
 export default function About() {
   return (
     <div className="narrow page">
-      <p className="hero-kicker about-kicker">About Brewery Compass</p>
-      <h1>A short history of North Carolina beer</h1>
+      <p className="hero-kicker about-kicker">NC Beer History</p>
+      <h1>The History of Beer in North Carolina</h1>
       <p className="about-lede">
         Brewery Compass exists for one reason: North Carolina quietly became one of the
         best beer states in America, and somebody ought to keep a good map of it. Here’s
@@ -160,6 +160,14 @@ export default function About() {
           <Link to="/get-involved" className="btn btn-ghost btn-lg">Get involved</Link>
         </div>
       </div>
+
+      <p className="about-colophon">
+        Brewery Compass is built by{' '}
+        <a href="https://stolenhourssoftware.github.io" target="_blank" rel="noreferrer">
+          Stolen Hours Software
+        </a>
+        , a one-person software shop in Raleigh, NC — software built after bedtime.
+      </p>
     </div>
   );
 }

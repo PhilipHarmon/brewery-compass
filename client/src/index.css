@@ -79,22 +79,38 @@ a { color: var(--accent-deep); }
   padding: 0.35rem 0.7rem;
   cursor: pointer;
 }
-.site-nav { display: flex; gap: 0.25rem; }
+.site-nav { display: flex; gap: 0.25rem; flex-wrap: nowrap; }
+/* v10: every nav link is a visible card at rest — the old hover look,
+   worn permanently at a softer intensity. */
 .site-nav a {
   color: #ffe9d2;
   text-decoration: none;
   font-weight: 600;
-  font-size: 1.08rem;
-  padding: 0.65rem 1.1rem;
+  font-size: 1.02rem;
+  white-space: nowrap;
+  padding: 0.6rem 0.95rem;
   border-radius: 8px;
+  background: rgba(255, 255, 255, 0.09);
+  box-shadow: 0 4px 12px rgba(255, 170, 110, 0.22);
   transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
-.site-nav a:hover { background: rgba(255, 255, 255, 0.14); color: #fff; }
-.site-nav a.active { background: rgba(255, 255, 255, 0.2); color: #fff; }
+.site-nav a:hover {
+  background: rgba(255, 255, 255, 0.17);
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(255, 170, 110, 0.35);
+}
+.site-nav a.active {
+  background: rgba(255, 255, 255, 0.26);
+  color: #fff;
+  box-shadow: 0 6px 18px rgba(255, 170, 110, 0.5);
+}
 @media (hover: hover) {
   .site-nav a:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 20px rgba(255, 170, 110, 0.45);
+  }
+  .site-nav a.active:hover {
+    box-shadow: 0 10px 22px rgba(255, 170, 110, 0.55);
   }
 }
 
@@ -631,9 +647,29 @@ input:focus, textarea:focus, select:focus {
 
 .muted-on-dark { color: #c9ab8a; }
 
-/* six nav items now — tighten desktop padding a touch so nothing wraps */
-@media (min-width: 721px) {
-  .site-nav a { padding: 0.65rem 0.8rem; }
+/* v10: six nav cards (incl. the longer "NC Beer History") plus the title
+   must hold one line from the 1080px container down to the 720px hamburger
+   breakpoint — tighten in two steps as the viewport narrows. */
+@media (min-width: 721px) and (max-width: 1100px) {
+  .site-title { font-size: 1.6rem; }
+  .site-nav { gap: 0.2rem; }
+  .site-nav a { font-size: 0.95rem; padding: 0.55rem 0.65rem; }
+}
+@media (min-width: 721px) and (max-width: 900px) {
+  .header-inner { gap: 0.6rem; padding: 0.7rem 0.75rem; }
+  .site-title { font-size: 1.25rem; }
+  .site-nav { gap: 0.15rem; }
+  .site-nav a { font-size: 0.85rem; padding: 0.5rem 0.45rem; }
+}
+
+/* v10: footer builder-credit link + About-page colophon */
+.footer-copy a { color: #e8d5bd; text-decoration: underline; }
+.footer-copy a:hover { color: #fff; }
+.about-colophon {
+  margin-top: 2.5rem;
+  text-align: center;
+  font-size: 0.92rem;
+  color: var(--muted);
 }
 
 /* star ratings */

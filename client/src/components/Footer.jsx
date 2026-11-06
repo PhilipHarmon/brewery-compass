@@ -21,7 +21,7 @@ export default function Footer() {
             <Link to="/breweries">Breweries</Link>
             <Link to="/map">Map</Link>
             <Link to="/itinerary">Plan a Day</Link>
-            <Link to="/about">About</Link>
+            <Link to="/about">NC Beer History</Link>
             <Link to="/get-involved">Get Involved</Link>
           </nav>
         </div>
@@ -39,7 +39,15 @@ export default function Footer() {
           <ContactForm />
         </div>
       </div>
-      <p className="footer-copy">© {year} Philip Harmon. Drink responsibly.</p>
+      <p className="footer-copy">
+        © {year} Philip Harmon. Drink responsibly.
+        <br />
+        Built by{' '}
+        <a href="https://stolenhourssoftware.github.io" target="_blank" rel="noreferrer">
+          Stolen Hours Software
+        </a>
+        .
+      </p>
     </footer>
   );
 }

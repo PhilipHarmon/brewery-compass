@@ -1,5 +1,7 @@
 # Brewery Compass 🍺
 
+Built by [Stolen Hours Software](https://stolenhourssoftware.github.io).
+
 North Carolina craft breweries — rebuilt on the MERN stack. Browse every
 brewery A–Z with tap lists (styles, ABV, IBU), explore them on a keyless
 Leaflet map with rich hover tooltips, and plan a full brewery day with drive
