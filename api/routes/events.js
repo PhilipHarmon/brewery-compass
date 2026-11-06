@@ -6,9 +6,10 @@ const router = express.Router();
 
 // GET /api/live/events?lat=&lng=&date=YYYY-MM-DD&radius=<miles, default 25, max 50>
 // Events near an anchor (the latest itinerary stop) on the plan date, from
-// Ticketmaster + SeatGeek. Upstream problems never reach the user: a source
-// that is unconfigured or down just contributes nothing, and with neither key
-// set the response says configured:false so the client hides the panel.
+// Ticketmaster + SeatGeek + Triangle iCal feeds + Eventbrite organizers.
+// Upstream problems never reach the user: a source that is unconfigured or
+// down just contributes nothing, and with no source configured the response
+// says configured:false so the client hides the panel.
 router.get('/live/events', async (req, res) => {
   const lat = Number(req.query.lat);
   const lng = Number(req.query.lng);
@@ -35,7 +36,7 @@ router.get('/live/events', async (req, res) => {
   // Only cache real answers: not the "no keys yet" state (so the feature
   // lights up immediately once keys are added) and not an all-sources-down
   // moment (so a transient outage doesn't stick for 6 hours).
-  const anyOk = payload.sources.ticketmaster === 'ok' || payload.sources.seatgeek === 'ok';
+  const anyOk = Object.values(payload.sources).some((s) => s === 'ok');
   if (payload.configured && anyOk) {
     try {
       await EventCache.updateOne(

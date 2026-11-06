@@ -1,22 +1,34 @@
-// "Happening Nearby" — events near a planned brewery day, from two free
-// developer APIs, fetched server-side only (keys never reach the browser):
-// - Ticketmaster Discovery API (primary): festivals + everything else, and
-//   its sources include Universe/FrontGate where many festivals actually list.
-// - SeatGeek Platform API (secondary): strong on concerts and sports.
+// "Happening Nearby" — events near a planned brewery day, from four
+// server-side sources (keys never reach the browser):
+// - Ticketmaster Discovery API: festivals + everything else, and its
+//   sources include Universe/FrontGate where many festivals actually list.
+// - SeatGeek Platform API: strong on concerts and sports.
+// - iCal feeds (v11, lib/ical.js): Triangle city calendars, both NC
+//   museums in Raleigh, Downtown Durham, Durham County Library — the
+//   local layer. No keys needed.
+// - Eventbrite (v11, lib/eventbrite.js): a curated list of Triangle
+//   organizers (Brewgaloo's Shop Local Raleigh, Trophy Brewing, …),
+//   because Eventbrite offers no open search — organizer pulls only.
 //
-// Both sources are optional. A missing key marks that source "unconfigured"
-// and it simply contributes nothing; a failed fetch marks it "down". The
-// endpoint built on this NEVER 500s because of an upstream: worst case the
-// client gets an empty list and quietly hides the panel.
+// Every source is optional and failure-isolated. A missing key marks a
+// keyed source "unconfigured" and it contributes nothing; a failed fetch
+// marks it "down". The endpoint built on this NEVER 500s because of an
+// upstream: worst case the client gets an empty list and quietly hides
+// the panel.
 //
-// Follows the breweryApi.js pattern: all third-party calls live in this lib.
+// Follows the breweryApi.js pattern: all third-party calls live in libs.
+
+const { fetchIcalEvents } = require('./ical');
+const { fetchEventbriteEvents } = require('./eventbrite');
+const {
+  categorize,
+  scoreEvent,
+  haversineMi,
+  dedupeEvents,
+} = require('./eventShared');
 
 const TM_BASE = 'https://app.ticketmaster.com/discovery/v2/events.json';
 const SG_BASE = 'https://api.seatgeek.com/2/events';
-
-const BEERY_WORDS =
-  /\b(beer|brew|brewery|brewing|ale|lager|ipa|stout|porter|oktoberfest|craft|cider|wine|whisk|bourbon|food truck|bbq|barbecue|taco|pizza|chef|tasting)\b/i;
-const FEST_WORDS = /\b(fest|festival|fair|jubilee|celebration|carnival)\b/i;
 
 async function getJson(url, params = {}, timeoutMs = 9000) {
   const qs = new URLSearchParams(params).toString();
@@ -30,34 +42,6 @@ async function getJson(url, params = {}, timeoutMs = 9000) {
   } finally {
     clearTimeout(timer);
   }
-}
-
-function haversineMi(lat1, lng1, lat2, lng2) {
-  const R = 3958.8;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLng = ((lng2 - lng1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
-  return 2 * R * Math.asin(Math.sqrt(a));
-}
-
-// Category from source-native fields first, then from the event name.
-function categorize(name, native) {
-  if (BEERY_WORDS.test(name) || FEST_WORDS.test(name)) return 'festival';
-  return native || 'other';
-}
-
-function scoreEvent(ev) {
-  // Beer/food/festival first (that's the point of the feature), then closer,
-  // then earlier. The client receives events already sorted.
-  let score = 0;
-  if (BEERY_WORDS.test(ev.name)) score += 100;
-  if (ev.category === 'festival') score += 60;
-  if (ev.category === 'music') score += 20;
-  if (ev.category === 'arts') score += 10;
-  if (ev.imageUrl) score += 2;
-  return score;
 }
 
 function tmCategory(ev) {
@@ -185,51 +169,49 @@ async function fetchSeatgeek({ lat, lng, date, radiusMi }) {
   }
 }
 
-function normalizeName(name) {
-  return String(name || '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim();
-}
-
-// Merge the two sources: the same real-world event often lists on both.
-// Duplicates share a normalized name + date; keep the richer copy.
-function dedupe(events) {
-  const byKey = new Map();
-  for (const ev of events) {
-    const key = `${normalizeName(ev.name)}|${ev.localDate}`;
-    const existing = byKey.get(key);
-    if (!existing) {
-      byKey.set(key, ev);
-      continue;
-    }
-    const keep = existing.imageUrl ? existing : ev.imageUrl ? ev : existing;
-    const drop = keep === existing ? ev : existing;
-    if (!keep.url && drop.url) keep.url = drop.url;
-    if (!keep.venueName && drop.venueName) keep.venueName = drop.venueName;
-    byKey.set(key, keep);
-  }
-  return [...byKey.values()];
+function settle(result, fallback) {
+  return result.status === 'fulfilled' ? result.value : fallback;
 }
 
 async function fetchEvents({ lat, lng, date, radiusMi }) {
-  const [tm, sg] = await Promise.allSettled([
+  const [tm, sg, ic, eb] = await Promise.allSettled([
     fetchTicketmaster({ lat, lng, date, radiusMi }),
     fetchSeatgeek({ lat, lng, date, radiusMi }),
+    fetchIcalEvents({ date }),
+    fetchEventbriteEvents({ date }),
   ]);
-  const tmRes = tm.status === 'fulfilled' ? tm.value : { status: 'down', events: [] };
-  const sgRes = sg.status === 'fulfilled' ? sg.value : { status: 'down', events: [] };
+  const tmRes = settle(tm, { status: 'down', events: [] });
+  const sgRes = settle(sg, { status: 'down', events: [] });
+  const icRes = settle(ic, { status: 'down', events: [] });
+  const ebRes = settle(eb, { status: 'unconfigured', events: [] });
 
-  const configured = tmRes.status !== 'unconfigured' || sgRes.status !== 'unconfigured';
+  const sources = {
+    ticketmaster: tmRes.status,
+    seatgeek: sgRes.status,
+    ical: icRes.status,
+    eventbrite: ebRes.status,
+  };
+  const configured = Object.values(sources).some((s) => s !== 'unconfigured');
 
-  let events = dedupe([...tmRes.events, ...sgRes.events]);
+  let events = dedupeEvents([...tmRes.events, ...sgRes.events, ...icRes.events, ...ebRes.events]);
   for (const ev of events) {
     ev.distanceMi =
       ev.lat != null && ev.lng != null
         ? Math.round(haversineMi(lat, lng, ev.lat, ev.lng) * 10) / 10
         : null;
-    ev._score = scoreEvent(ev);
   }
+  // Ticketmaster/SeatGeek were radius-queried upstream, so their results
+  // are in range by construction. The feed sources (iCal/Eventbrite) are
+  // not geo-queried — when an event carries coordinates, hold it to the
+  // same radius; coordinate-less local events (most calendar entries)
+  // stay, since their Triangle feeds are local by definition.
+  events = events.filter(
+    (ev) =>
+      !['ical', 'eventbrite'].includes(ev.source) ||
+      ev.distanceMi == null ||
+      ev.distanceMi <= radiusMi,
+  );
+  for (const ev of events) ev._score = scoreEvent(ev);
   events.sort(
     (a, b) =>
       b._score - a._score ||
@@ -243,7 +225,7 @@ async function fetchEvents({ lat, lng, date, radiusMi }) {
     anchor: { lat, lng },
     radiusMi,
     events,
-    sources: { ticketmaster: tmRes.status, seatgeek: sgRes.status },
+    sources,
     configured,
   };
 }

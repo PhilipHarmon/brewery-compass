@@ -5,6 +5,28 @@ const DATE_KEY = 'brewDayDate';
 const CAT_ICON = { festival: '🎪', music: '🎵', sports: '🏟️', arts: '🎭', other: '🎟️' };
 const CAT_LABEL = { festival: 'Festival', music: 'Music', sports: 'Sports', arts: 'Arts', other: 'Event' };
 
+// The note names only the sources that actually answered this request —
+// honest credit, matching what the merged list really came from.
+const SOURCE_LABEL = {
+  ticketmaster: 'Ticketmaster',
+  seatgeek: 'SeatGeek',
+  eventbrite: 'Eventbrite',
+  ical: 'local Triangle calendars',
+};
+function SourceNote({ sources }) {
+  const names = Object.entries(SOURCE_LABEL)
+    .filter(([key]) => sources?.[key] === 'ok')
+    .map(([, label]) => label);
+  if (!names.length) return null;
+  const list = names.length > 1 ? `${names.slice(0, -1).join(', ')} & ${names[names.length - 1]}` : names[0];
+  return (
+    <p className="muted small event-note">
+      Events via {list} — a brewery's own trivia night still won't show up here, but local
+      festivals, markets, and museum nights now do.
+    </p>
+  );
+}
+
 function isoLocal(d) {
   const pad = (n) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -92,12 +114,16 @@ export default function EventsPanel({ stops }) {
           setState({ status: 'hidden', events: [] });
           return;
         }
-        const anyOk = data.sources?.ticketmaster === 'ok' || data.sources?.seatgeek === 'ok';
+        const anyOk = Object.values(data.sources || {}).some((s) => s === 'ok');
         if (!anyOk && (!data.events || data.events.length === 0)) {
           setState({ status: 'hidden', events: [] });
           return;
         }
-        setState({ status: data.events?.length ? 'ready' : 'empty', events: data.events || [] });
+        setState({
+          status: data.events?.length ? 'ready' : 'empty',
+          events: data.events || [],
+          sources: data.sources || {},
+        });
       })
       .catch(() => !cancelled && setState({ status: 'hidden', events: [] }));
     return () => {
@@ -111,7 +137,7 @@ export default function EventsPanel({ stops }) {
         <h2 className="panel-title">🎪 Happening near your day</h2>
         <p className="muted">
           Add a starting brewery and we'll check what's on nearby — festivals, concerts,
-          ballgames — for the day you're planning.
+          ballgames, and local goings-on — for the day you're planning.
         </p>
         <DateRow date={date} setDate={setDate} />
       </section>
@@ -143,6 +169,9 @@ export default function EventsPanel({ stops }) {
                   <span className="kind-badge">
                     {CAT_ICON[ev.category] || CAT_ICON.other} {CAT_LABEL[ev.category] || 'Event'}
                   </span>
+                  {(ev.source === 'ical' || ev.source === 'eventbrite') && (
+                    <span className="local-badge">📍 Local</span>
+                  )}
                 </div>
                 <div className="muted small">
                   {[ev.venueName, ev.city].filter(Boolean).join(' · ')}
@@ -162,7 +191,7 @@ export default function EventsPanel({ stops }) {
                     target="_blank"
                     rel="noreferrer noopener"
                   >
-                    🎟️ Tickets / details
+                    {ev.source === 'ical' ? 'Details' : '🎟️ Tickets / details'}
                   </a>
                 )}
               </div>
@@ -170,12 +199,7 @@ export default function EventsPanel({ stops }) {
           ))}
         </ul>
       )}
-      {state.status === 'ready' && (
-        <p className="muted small event-note">
-          Events via Ticketmaster & SeatGeek — they catch festivals, concerts, ballgames, and
-          theater, not a small brewery's own trivia night.
-        </p>
-      )}
+      {state.status === 'ready' && <SourceNote sources={state.sources} />}
     </section>
   );
 }

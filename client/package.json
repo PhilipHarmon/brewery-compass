@@ -1,1 +1,0 @@
-{"dependencies":{"leaflet":"^1.9.4","react":"^19.3.0","react-dom":"^19.3.0","react-leaflet":"^5.0.0","react-router-dom":"^7.1.1"},"devDependencies":{"@vitejs/plugin-react":"^6.1.2","vite":"^8.3.2"},"name":"brewery-compass","private":true,"scripts":{"build":"vite build","dev":"vite","preview":"vite preview"},"type":"module","version":"1.0.0"}

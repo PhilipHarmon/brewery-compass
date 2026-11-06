@@ -23,6 +23,11 @@ services:
         sync: false
       - key: ADMIN_KEY
         sync: false
+      # v11 — Eventbrite private token (optional): lights up the curated
+      # Triangle organizer pulls in Happening Nearby. The iCal half of the
+      # local layer needs no key. Set in the dashboard only.
+      - key: EVENTBRITE_TOKEN
+        sync: false
 
   # Static front-end (Vite + React).
   - type: web

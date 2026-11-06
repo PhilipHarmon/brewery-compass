@@ -36,8 +36,16 @@ export default function App() {
 function NotFound() {
   return (
     <div className="narrow">
-      <h1>Page not found</h1>
-      <p>Sorry — that page doesn't exist. Let's head back home.</p>
+      <p className="kicker">404</p>
+      <h1>That trail went cold</h1>
+      <p>
+        Sorry — that page doesn't exist. It may have moved, or the link has a typo.
+        The beer, fortunately, is exactly where it always was.
+      </p>
+      <div className="notfound-actions">
+        <Link to="/" className="btn btn-primary">Back to Home</Link>
+        <Link to="/breweries" className="btn btn-ghost">Browse Breweries</Link>
+      </div>
     </div>
   );
 }

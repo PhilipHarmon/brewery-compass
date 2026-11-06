@@ -29,7 +29,8 @@ export default function Footer() {
           <h4>Data</h4>
           <p className="muted-on-dark">
             Brewery listings via Open Brewery DB. Nearby places via OpenStreetMap.
-            Drive times via OSRM. Events via Ticketmaster & SeatGeek.
+            Drive times via OSRM. Events via Ticketmaster, SeatGeek, Eventbrite,
+            and Triangle city, museum &amp; library calendars.
           </p>
           <p>
             <Link to="/admin" className="footer-admin-link">Admin</Link>
